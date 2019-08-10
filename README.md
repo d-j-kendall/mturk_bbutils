@@ -14,7 +14,7 @@ mturkvariables.py's intention is to take all the files in a given directory and 
 
 `python3 mturkvariables.py -i director_with_images -url s3_bucket_folder_url -o output.csv`
 
-[How to create a project on mturk]()
+[How to create a project on mturk](https://youtu.be/o4hV7NRFreE)
 
 
 ### MTurk Annotation Viewer
