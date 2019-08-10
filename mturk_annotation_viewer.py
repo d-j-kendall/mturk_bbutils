@@ -6,7 +6,7 @@
 import argparse
 import csv
 import getch as g
-
+import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +17,8 @@ from PIL import Image
 
 def display_images(access_key='',
                    secret_key='',
-                   csv_file = ''):
+                   csv_file = '',
+                   directory = ''):
     # Create your connection to MTurk
 
     # mtc = MTurkConnection(aws_access_key_id=access_key,
@@ -32,15 +33,12 @@ def display_images(access_key='',
         csv_data = [row for row in csv_data]
     i = 0
     while(i<csv_data.__len__()):
-        result = mtc.get_assignments(csv_data[i]["HITId"])
-        assignment = result[0]
-        worker_id = assignment.WorkerId
-        for answer in assignment.answers[0]:
-          if answer.qid == 'annotation_data':
-            worker_answer = json.loads(answer.fields[0])
+
+
+        worker_answer = json.loads(csv_data[i]["Answer.annotatedResult.boundingBoxes"])
         # Load the image from the HIT
-        response = requests.get(csv_data[i]["Input.image_url"])
-        img = Image.open(BytesIO(response.content))
+
+        img = Image.open(os.path.join(directory,csv_data[i]["Input.image_url"].split("/")[-1]))
         im = np.array(img, dtype=np.uint8)
         # Create figure, axes, and display the image
         fig,ax = plt.subplots(1)
@@ -77,18 +75,18 @@ if __name__=='__main__':
     args = argparse.ArgumentParser()
     args.add_argument('--csv',type=str,default='',help="enter path to mturk results csv")
     args.add_argument('--keycsv',type=str,default='rootkey.csv',help="Enter path to your key csv downloaded from amazon")
+    args.add_argument('--dir', type=str, default='', help="Path to the images in the CSV")
     options = args.parse_args()
     access_key = ''
     secret_key = ''
-    with open(options.keycsv) as keyfile:
-        file_reader = csv.reader(keyfile)
-        keys = [row[0].split('=')[1] for row in file_reader]
+    keys = ['','']
+    if os.path.exists(options.keycsv):
+        with open(options.keycsv) as keyfile:
+            file_reader = csv.reader(keyfile)
+            keys = [row[0].split('=')[1] for row in file_reader]
 
-    keys[0] = keys[0] # .split('=')[1]
-    keys[1] = keys[1] # .split('=')[1]
+        keys[0] = keys[0] # .split('=')[1]
+        keys[1] = keys[1] # .split('=')[1]
 
 
-
-
-
-    display_images(keys[0],keys[1], options.csv)
+    display_images(keys[0],keys[1], options.csv, options.dir)
