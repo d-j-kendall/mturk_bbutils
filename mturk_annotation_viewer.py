@@ -1,11 +1,11 @@
-import boto
-from boto.mturk.connection import MTurkConnection
-from boto.mturk.question import HTMLQuestion
-from boto.mturk.layoutparam import LayoutParameter
-from boto.mturk.layoutparam import LayoutParameters
+# import boto
+#
+# from boto.mturk.question import HTMLQuestion
+# from boto.mturk.layoutparam import LayoutParameter
+# from boto.mturk.layoutparam import LayoutParameters
 import argparse
 import csv
-import msvcrt
+import getch as g
 
 import json
 import numpy as np
@@ -19,34 +19,58 @@ def display_images(access_key='',
                    secret_key='',
                    csv_file = ''):
     # Create your connection to MTurk
-    mtc = MTurkConnection(aws_access_key_id=access_key,
-    aws_secret_access_key=secret_key,
-    host='mechanicalturk.amazonaws.com')
+
+    # mtc = MTurkConnection(aws_access_key_id=access_key,
+    # aws_secret_access_key=secret_key,
+    # host='mechanicalturk.amazonaws.com')
+
     # This is the value you received when you created the HIT
     # You can also retrieve HIT IDs by calling GetReviewableHITs
     # and SearchHITs. See the links to read more about these APIs.
-    with open()
-        csv_data = csv.DictReader
-    hit_id = "386T3MLZLNVRU564VQVZSIKA8D580B"
-    result = mtc.get_assignments(hit_id)
-    assignment = result[0]
-    worker_id = assignment.WorkerId
-    for answer in assignment.answers[0]:
-      if answer.qid == 'annotation_data':
-        worker_answer = json.loads(answer.fields[0])
-    # Load the image from the HIT
-    response = requests.get('http://turk.s3.amazonaws.com/stop_sign_picture.jpg')
-    img = Image.open(BytesIO(response.content))
-    im = np.array(img, dtype=np.uint8)
-    # Create figure, axes, and display the image
-    fig,ax = plt.subplots(1)
-    ax.imshow(im)
-    # Draw the bounding box
-    for answer in worker_answer:
-        rect = patches.Rectangle((answer['left'],answer['top']),answer['width'],answer['height'],linewidth=1,edgecolor='#32cd32',facecolor='none')
-        ax.add_patch(rect)
-    # Show the bounding box
-    plt.show()
+    with open(csv_file) as csv_open:
+        csv_data = csv.DictReader(csv_open)
+        csv_data = [row for row in csv_data]
+    i = 0
+    while(i<csv_data.__len__()):
+        result = mtc.get_assignments(csv_data[i]["HITId"])
+        assignment = result[0]
+        worker_id = assignment.WorkerId
+        for answer in assignment.answers[0]:
+          if answer.qid == 'annotation_data':
+            worker_answer = json.loads(answer.fields[0])
+        # Load the image from the HIT
+        response = requests.get(csv_data[i]["Input.image_url"])
+        img = Image.open(BytesIO(response.content))
+        im = np.array(img, dtype=np.uint8)
+        # Create figure, axes, and display the image
+        fig,ax = plt.subplots(1)
+        ax.imshow(im)
+        # Draw the bounding box
+        for answer in worker_answer:
+            rect = patches.Rectangle((answer['left'],answer['top']),answer['width'],answer['height'],linewidth=1,edgecolor='#32cd32',facecolor='none')
+            ax.add_patch(rect)
+        # Show the bounding box
+        plt.show()
+        control_char = g.getch()
+        if(control_char == 'w'):
+            csv_data[i]["Approve"] = 'x'
+            csv_data[i]["Reject"] = ''
+        elif(control_char == 's'):
+            csv_data[i]["Approve"] = ''
+            csv_data[i]["Reject"] = 'Inaccurate annotation, please read instructions'
+
+        i += keyboard_control(control_char)
+
+def keyboard_control(char):
+    switch = {
+        'a': -1,
+        'd': 1,
+        'w': 0,
+        's': 0
+    }
+    return switch.get(char,0)
+
+
 
 
 if __name__=='__main__':
@@ -58,10 +82,10 @@ if __name__=='__main__':
     secret_key = ''
     with open(options.keycsv) as keyfile:
         file_reader = csv.reader(keyfile)
-        keys = [row for row in file_reader]
+        keys = [row[0].split('=')[1] for row in file_reader]
 
-    keys[0] = keys[0].split('=')[1]
-    keys[1] = keys[1].split('=')[1]
+    keys[0] = keys[0] # .split('=')[1]
+    keys[1] = keys[1] # .split('=')[1]
 
 
 
