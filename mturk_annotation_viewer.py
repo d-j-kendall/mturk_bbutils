@@ -8,12 +8,19 @@ import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use("TkAgg")
 #from matplotlib.pyplot import plot, draw, show, ion
 import matplotlib.patches as patches
 from PIL import Image
 import msvcrt as m # works on Windows, might work on Linux, but we need to test it. Else we can refer to link below.
 # We can refer to this, if we want a "getch-like" function that works on LINUX/UNIX systems in addition to Windows STDIN:
 # http://code.activestate.com/recipes/134892/
+from WindowMgr import WindowMgr
+
+
+w = WindowMgr()
+w.find_window_wildcard(".*Command Prompt.*")
 
 
 def display_images(access_key='', secret_key='', csv_file='', directory=''):
@@ -78,7 +85,7 @@ def display_images(access_key='', secret_key='', csv_file='', directory=''):
         im = np.array(img, dtype=np.uint8)
 
         # Create figure, axes, and display the image
-
+        #plt.ion()
         fig, ax = plt.subplots(1)
         ax.imshow(im)
 
@@ -91,11 +98,18 @@ def display_images(access_key='', secret_key='', csv_file='', directory=''):
         # Show the bounding box
         # Draw and pause needed to avoid matplotlibs shitty innate blocking feature
         plt.title('Image #: %i \n path: %s' % (i, path))
-        plt.draw()
+        #plt.draw()
+        plt.ion()
+        #plt.pause(1)
+        #plt.show()
         plt.pause(0.001)
+        plt.draw()
+
+        # Force focus on command prompt (Windows)
+        w.set_foreground()
 
         # Give the user the option of approving or rejecting the image
-        print("\nApprove or Reject annotation: \n"
+        print("Approve or Reject annotation: \n"
               "W: Approve \n"
               "S: Reject \n"
               "E: EXIT \n")
@@ -117,7 +131,7 @@ def display_images(access_key='', secret_key='', csv_file='', directory=''):
             return
 
         # Give the user the option of advancing to the next image or going back to the previous image
-        print("\nMove to Previous (<<) or Next (>>) Image: \n"
+        print("Move to Previous (<<) or Next (>>) Image: \n"
               "A: Previous image \n"
               "D: Next image \n"
               "E: EXIT \n")
@@ -140,8 +154,8 @@ def display_images(access_key='', secret_key='', csv_file='', directory=''):
             return
 
     # Tricky, but needed to avoid the blocking features of matplotlib
-    plt.ion()
-    plt.show()
+    #plt.ion()
+    #plt.show()
 
 
 if __name__ == '__main__':
