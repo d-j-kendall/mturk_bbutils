@@ -22,16 +22,19 @@ class Viewer:
         self.dir=dir
         self.current_count = 0
         self.fig, self.ax = plt.subplots(1)
+        self.csv_data = None
+        with open(self.csvfile) as csv_open:
+            csv_data = csv.DictReader(csv_open)
+            self.csv_data = [row for row in csv_data]
 
 
     def show_image(self, current_count):
-        with open(self.csvfile) as csv_open:
-            csv_data = csv.DictReader(csv_open)
-            csv_data = [row for row in csv_data]
-        worker_answer = json.loads(csv_data[current_count]["Answer.annotatedResult.boundingBoxes"])
+        plt.cla()
+        plt.title(current_count)
+        worker_answer = json.loads(self.csv_data[current_count]["Answer.annotatedResult.boundingBoxes"])
         # Load the image from the HIT
 
-        img = Image.open(os.path.join(self.dir, csv_data[current_count]["Input.image_url"].split("/")[-1]))
+        img = Image.open(os.path.join(self.dir, self.csv_data[current_count]["Input.image_url"].split("/")[-1]))
         im = np.array(img, dtype=np.uint8)
         # Create figure, axes, and display the image
 
@@ -49,8 +52,30 @@ class Viewer:
     def key_press(self,event):
         n = event.key
         if n=='right':
-            self.current_count+=1
+            if(self.current_count+1<len(self.csv_data)):
+                self.current_count+=1
+            else:
+                self.current_count = 0
+
             self.show_image(self.current_count)
+
+        elif n=='left':
+            if(self.current_count<=0):
+                self.current_count = len(self.csv_data)-1
+            else:
+                self.current_count-= 1
+            self.show_image(self.current_count)
+        elif n=='up':
+            self.csv_data[self.current_count]['Approve']='X'
+            self.csv_data[self.current_count]['Reject']=''
+
+        elif n=='down':
+            self.csv_data[self.current_count]['Approve'] = ''
+            self.csv_data[self.current_count]['Reject'] = 'One or more annotations are incorrect, please read instructions'
+
+
+
+
 
 
 # def left_key():
