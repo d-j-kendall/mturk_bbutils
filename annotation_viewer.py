@@ -17,9 +17,10 @@ from PIL import Image
 
 class Viewer:
 
-    def __init__(self,csvfile,dir):
+    def __init__(self,csvfile,dir,output_file):
         self.csvfile=csvfile
         self.dir=dir
+        self.output_file = output_file
         self.current_count = 0
         self.fig, self.ax = plt.subplots(1)
         self.csv_data = None
@@ -78,6 +79,7 @@ class Viewer:
 
 
 
+
 # def left_key():
 #     None
 #
@@ -94,10 +96,30 @@ class Viewer:
 
 
 if __name__=='__main__':
-    args = argparse.ArgumentParser()
-    args.add_argument('--csvfile',type=str,default='',help="enter path to mturk results csv")
-    args.add_argument('--dir', type=str, default='', help="Path to the images in the CSV")
-    options = args.parse_args()
+    args = argparse.ArgumentParser(prog='annotation_viewer.py',
+                                   description='This program is used to view, approve and reject annotations\n'
+                                               'from an MTurk Batch Results CSV')
+    subparser = args.add_subparsers(title='view', description='view annotations with ability to approve and reject',prog='annotation_viewer.py', dest='sub')
 
-    viewer = Viewer(csvfile=options.csvfile,dir=options.dir)
-    viewer.show_image(0)
+
+    view_prog = subparser.add_parser('view')
+    view_prog.add_argument('--csv-file','-i',type=str,default='',help="enter path to mturk results csv")
+    view_prog.add_argument('--dir', type=str, default='', help="Path to the images in the CSV")
+    view_prog.add_argument('--output-csv','-o',type=str, default='', help="output csv path to write back to defaults to open file otherwise")
+
+
+    reject_prog  = subparser.add_parser('reject')
+    reject_prog.add_argument('--csv-file', '-i', type=str, default='', help="enter path to mturk results csv from which to remove rows")
+    reject_prog.add_argument('--output-csv','-o',type=str,default='', help="removed all rows with non empty 'Reject' Col\n"
+                                                   "and write to path defined here")
+
+    args = args.parse_args()
+    print(args)
+
+    if(args.sub == 'view'):
+        viewer = Viewer(csvfile=args.csv_file,dir=args.dir,output_file=args.output_csv)
+        viewer.show_image(0)
+    elif(args.sub =='reject'):
+        use_new_class_here = None
+        ##TODO write new reject class to remove rows and rewrite csv
+
