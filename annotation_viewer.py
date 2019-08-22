@@ -10,6 +10,26 @@ import matplotlib.patches as patches
 
 matplotlib.use("TkAgg")
 
+class Rejecter:
+    def __init__(self,
+                 outfile='default.csv',
+                 csvfile=""):
+
+        self.output_file = outfile
+        self.csvfile = infile
+        self.csv_data = None
+
+        with open(self.csvfile) as csv_open:
+            csv_data = csv.DictReader(csv_open)
+            self.csv_data = [row for row in csv_data]
+
+    def reject(self):
+
+        for row in self.csv_data:
+            if row['Reject']!= "":
+                self.csv_data.remove(row)
+
+
 
 class Viewer:
     def __init__(self, csvfile, image_dir, output_file):
@@ -128,5 +148,7 @@ if __name__ == '__main__':
         viewer.show_image(0)
 
     elif args.sub == 'reject':
-        use_new_class_here = None
+        rejecter = Rejecter(csvfile=args.csv_file,
+                            outfile=args.output_csv)
+        rejecter.reject()
         #  TODO write new reject class to remove rows and rewrite csv
