@@ -8,12 +8,19 @@ import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import plot, draw, show, ion
+#import matplotlib
+#matplotlib.use("TkAgg")
+#from matplotlib.pyplot import plot, draw, show, ion
 import matplotlib.patches as patches
-# import requests
-from io import BytesIO
 from PIL import Image
-import msvcrt as m
+import msvcrt as m # works on Windows, might work on Linux, but we need to test it. Else we can refer to link below.
+# We can refer to this, if we want a "getch-like" function that works on LINUX/UNIX systems in addition to Windows STDIN:
+# http://code.activestate.com/recipes/134892/
+from WindowMgr import WindowMgr
+
+
+w = WindowMgr()
+w.find_window_wildcard(".*Command Prompt.*")
 
 
 def display_images(access_key='', secret_key='', csv_file='', directory=''):
@@ -21,6 +28,7 @@ def display_images(access_key='', secret_key='', csv_file='', directory=''):
     # get chars from STDIN on command line
     def wait():
         return m.getch()
+        #return byte_E
 
     # Create your connection to MTurk
 
@@ -67,7 +75,8 @@ def display_images(access_key='', secret_key='', csv_file='', directory=''):
 
         # print out what iteration we are currently on, and the current img url
         print('At i = %i \n' % i)
-        print('Img url is: %s \n' % os.path.join(directory, csv_data[i]["Input.image_url"].split("/")[-1]))
+        #print('Img name is: %s \n' % os.path.join(directory, csv_data[i]["Input.image_url"].split("/")[-1]))
+        path = os.path.join(directory, csv_data[i]["Input.image_url"].split("/")[-1])
 
         # Load the image from the HIT
         worker_answer = json.loads(csv_data[i]["Answer.annotatedResult.boundingBoxes"])
@@ -76,62 +85,77 @@ def display_images(access_key='', secret_key='', csv_file='', directory=''):
         im = np.array(img, dtype=np.uint8)
 
         # Create figure, axes, and display the image
+        #plt.ion()
         fig, ax = plt.subplots(1)
         ax.imshow(im)
 
         # Draw the bounding box
         for answer in worker_answer:
-            rect = patches.Rectangle((answer['left'], answer['top']), answer['width'], answer['height'], linewidth=1,
-                                     edgecolor='#32cd32', facecolor='none')
+            rect = patches.Rectangle((answer['left'], answer['top']), answer['width'], answer['height'], linewidth=3,
+                                     edgecolor='#cfff04', facecolor='none')
             ax.add_patch(rect)
 
         # Show the bounding box
         # Draw and pause needed to avoid matplotlibs shitty innate blocking feature
-        plt.draw()
+        plt.title('Image #: %i \n path: %s' % (i, path))
+        #plt.draw()
+        plt.ion()
+        #plt.pause(1)
+        #plt.show()
         plt.pause(0.001)
+        plt.draw()
+
+        # Force focus on command prompt (Windows)
+        w.set_foreground()
 
         # Give the user the option of approving or rejecting the image
-        print("\nApprove or Reject: \n"
-              "W: approve \n"
-              "S: reject \n"
+        print("Approve or Reject annotation: \n"
+              "W: Approve \n"
+              "S: Reject \n"
               "E: EXIT \n")
 
-        if wait() == byte_W or byte_w:
-            print('You approved this image')
+        control_char = wait()
+        #print('control char is %s' % control_char)
+
+        if control_char == byte_W or control_char == byte_w:
+            print('You have opted to APPROVE this annotation.')
             csv_data[i]["Approve"] = 'x'
             csv_data[i]["Reject"] = ''
-        elif wait() == byte_S or byte_s:
-            print('You have rejected this image')
+        elif control_char == byte_S or control_char == byte_s:
+            print('You have opted to REJECT this annotation.')
             csv_data[i]["Approve"] = ''
             csv_data[i]["Reject"] = 'Inaccurate annotation, please read instructions'
-        # if user enters 'E' to exit, break out of while loop and end program
-        elif wait() == byte_E or byte_e:
-            i = 99999
-            return i
+        # if user enters 'E' to exit, exit while loop and end program
+        elif control_char == byte_E or control_char == byte_e:
+            print("Goodbye.")
+            return
 
         # Give the user the option of advancing to the next image or going back to the previous image
-        print("\nPrevious Image or Next Image: \n"
+        print("Move to Previous (<<) or Next (>>) Image: \n"
               "A: Previous image \n"
               "D: Next image \n"
               "E: EXIT \n")
 
-        if wait() == byte_D or byte_d:
-            print('Next Image.')
+        control_char = wait()
+        #print('control char is %s' % control_char)
+
+        if control_char == byte_D or control_char == byte_d:
+            print('You have selected NEXT image.')
             i += 1
             plt.close(fig)
-        elif wait() == byte_A or byte_a:
-            print('Previous Image.')
+        elif control_char == byte_A or control_char == byte_a:
+            print('You have selected PREVIOUS Image.')
             if i != 0:
                 i -= 1
                 plt.close(fig)
-        # if user enters 'E' to exit, break out of while loop and end program but not currently working
-        elif wait() == byte_E or byte_e:
-            i = 99999
-            return i
+        # if user enters 'E' to exit, exit while loop and end program
+        elif control_char == byte_E or control_char == byte_e:
+            print("Goodbye.")
+            return
 
     # Tricky, but needed to avoid the blocking features of matplotlib
-    plt.ion()
-    plt.show()
+    #plt.ion()
+    #plt.show()
 
 
 if __name__ == '__main__':
