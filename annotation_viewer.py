@@ -38,10 +38,14 @@ class Viewer:
         self.output_file = output_file
         self.current_count = 0
         self.fig, self.ax = plt.subplots(1)
-        self.csv_data = None
+        self.csv_data = []
         with open(self.csvfile) as csv_open:
-            csv_data = csv.DictReader(csv_open)
-            self.csv_data = [row for row in csv_data]
+            csv_data = csv.DictReader(csv_open,delimiter=',')
+            self.dialect = csv_data.dialect
+            self.fieldnames = csv_data.fieldnames
+            for row in csv_data:
+                row['RequesterAnnotation'] = ''
+                self.csv_data.append(row)
 
     def show_image(self, current_count):
         plt.cla()
@@ -58,9 +62,19 @@ class Viewer:
         # Draw the bounding box
 
         for answer in worker_answer:
-            rect = patches.Rectangle((answer['left'], answer['top']), answer['width'], answer['height'],
-                                     linewidth=1, edgecolor='#32cd32', facecolor='none')
-        self.ax.add_patch(rect)
+            if answer['label'] == 'center':
+                rect = patches.Rectangle((answer['left'], answer['top']), answer['width'], answer['height'],
+                                         linewidth=1, edgecolor='#32cd32', facecolor='none')
+            elif answer['label'] == 'number-0':
+                rect = patches.Rectangle((answer['left'], answer['top']), answer['width'], answer['height'],
+                                         linewidth=1, edgecolor='#29FF80', facecolor='none')
+            elif answer['label'] == 'ball':
+                rect = patches.Rectangle((answer['left'], answer['top']), answer['width'], answer['height'],
+                                     linewidth=1, edgecolor='#F000FF', facecolor='none')
+            else:
+                rect = patches.Rectangle((answer['left'], answer['top']), answer['width'], answer['height'],
+                                         linewidth=1, edgecolor='#FF45F0', facecolor='none')
+            self.ax.add_patch(rect)
         # Show the bounding box
         plt.show()
 
@@ -88,7 +102,12 @@ class Viewer:
             self.csv_data[self.current_count]['Approve'] = ''
             self.csv_data[self.current_count]['Reject'] = \
                 'One or more annotations are incorrect, please read instructions'
+        elif n == '1':
+            with open(self.output_file,'w+') as csvout:
 
+                writer = csv.DictWriter(csvout, fieldnames=self.fieldnames,delimiter=',',dialect=self.dialect)
+                writer.writeheader()
+                writer.writerows(self.csv_data)
 
 if __name__ == '__main__':
 
